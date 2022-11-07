@@ -42,20 +42,40 @@ public class Main {
     }
     tmp = null;
 
-    double[][] afterPca = Data.PCANIPALS(data, numComponent);
 
-    StringBuilder sb = new StringBuilder();
-    for (var darr : afterPca) {
-      for (int i = 0; i < darr.length - 1; i++) {
-        sb.append(darr[i])
-          .append(",");
-      }
-      sb.append(darr[darr.length - 1])
-        .append("\n");
-    }
+    double[][] afterPca = Data.PCANIPALS(transPose(data), numComponent);
+    matrixPrint(afterPca);
 
-    System.out.print(sb);
+//    StringBuilder sb = new StringBuilder();
+//    for (var darr : afterPca) {
+//      for (int i = 0; i < darr.length - 1; i++) {
+//        sb.append(darr[i])
+//          .append(",");
+//      }
+//      sb.append(darr[darr.length - 1])
+//        .append("\n");
+//    }
+//
+//    System.out.print(sb);
 
   }
 
+  private static double[][] transPose(double[][] mat) {
+    double[][] result = new double[mat[0].length][mat.length];
+    for (int i = 0; i < result.length; i++) {
+      for (int j = 0; j < result[i].length; j++) {
+        result[i][j] = mat[j][i];
+      }
+    }
+    return result;
+  }
+
+  private static void matrixPrint(double[][] matrix) {
+    for (var row : matrix) {
+      for (int i = 0; i < row.length - 1; i++) {
+        System.out.print(row[i] + " ");
+      }
+      System.out.println(row[row.length - 1]);
+    }
+  }
 }

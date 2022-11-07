@@ -104,6 +104,7 @@ public class Data {
     EigenSet eigen = data.getCovarianceEigenSet();
     double[][] featureVector = data.buildPrincipalComponents(numComponents, eigen);
     double[][] PC = Matrix.transpose(featureVector);
+    Params.pcValueWriter(PC);
     double[][] inputTranspose = Matrix.transpose(input);
     return Matrix.transpose(Matrix.multiply(PC, inputTranspose));
   }
@@ -202,13 +203,16 @@ public class Data {
    * Normalizes the input matrix so that each column is centered at 0.
    */
   double[][] normalize(double[][] input) {
+    double mean = 0.0;
     double[][] out = new double[input.length][input[0].length];
     for (int i = 0; i < input.length; i++) {
-      double mean = mean(input[i]);
+      mean = mean(input[i]);
       for (int j = 0; j < input[i].length; j++) {
         out[i][j] = input[i][j] - mean;
       }
     }
+
+    Params.meanValueWriter(mean);
     return out;
   }
 
