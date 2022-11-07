@@ -6,9 +6,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Params {
-  public static String pcaDataPath = "";
+  public static String pcaDataPath = "./pca_data.ini";
 
-  public static String meanFilePath = "";
+  public static String meanFilePath = "./pca_mean.ini";
 
   public static void pcValueWriter(double[][] pcValues) {
     try (var fwriter = new BufferedWriter(new FileWriter(pcaDataPath))) {
