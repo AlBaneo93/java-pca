@@ -9,20 +9,24 @@ import java.util.List;
 
 public class Main {
 
+  public static String pcValuePath = null;
+
+  public static String meanValuePath = null;
+
   public static void main(String[] args) throws IOException {
     // 파이썬에서 전처리 후 저장된 경로
-    String dataRoot = args[0];
+    String beforePcaPath = args[0];
     int numComponent = Integer.parseInt(args[1]);
+    Main.pcValuePath = args[2];
+    Main.meanValuePath = args[3];
+
 
     double[][] data = null;
     List<double[]> tmp = new ArrayList<>();
-    try (var bis = new BufferedReader(new FileReader(dataRoot))) {
+    try (var bis = new BufferedReader(new FileReader(beforePcaPath))) {
       while (bis.ready()) {
         double[] arr = Arrays.stream(bis.readLine()
-                                        //                                   .replaceAll("]", "")
-                                        //                                   .replaceAll("\\[", "")
                                         .split(","))
-                             //                        .filter(s -> !s.isBlank())
                              .mapToDouble(value -> Double.parseDouble(value.replaceAll(",", "")
                                                                            .replaceAll(" ", "")))
                              .toArray();
@@ -42,11 +46,12 @@ public class Main {
     tmp = null;
 
 
-    double[][] afterPca = Data.PCANIPALS(transPose(data), numComponent);
-    matrixPrint(transPose(afterPca));
+    double[][] afterPca = Data.principalComponentAnalysis(Matrix.transpose(data), numComponent);
+    matrixPrint(Matrix.transpose(afterPca));
+
   }
 
-  private static double[][] transPose(double[][] mat) {
+  private double[][] transPose(double[][] mat) {
     double[][] result = new double[mat[0].length][mat.length];
     for (int i = 0; i < result.length; i++) {
       for (int j = 0; j < result[i].length; j++) {

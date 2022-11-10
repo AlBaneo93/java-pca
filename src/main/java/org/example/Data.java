@@ -12,6 +12,7 @@ import org.example.exception.MatrixException;
 public class Data {
   double[][] matrix; //matrix[i] is the ith row; matrix[i][j] is the ith row, jth column
 
+
   /**
    * Constructs a new data matrix.
    *
@@ -98,13 +99,13 @@ public class Data {
    * @param numComponents number of components desired
    * @return the transformed data set
    */
-  static double[][] principalComponentAnalysis(double[][] input, int numComponents) {
+  public static double[][] principalComponentAnalysis(double[][] input, int numComponents) {
     Data data = new Data(input);
     data.center();
     EigenSet eigen = data.getCovarianceEigenSet();
     double[][] featureVector = data.buildPrincipalComponents(numComponents, eigen);
     double[][] PC = Matrix.transpose(featureVector);
-    Params.pcValueWriter(PC);
+//    Utils.pcValueWriter(PC, Main.pcValuePath);
     double[][] inputTranspose = Matrix.transpose(input);
     return Matrix.transpose(Matrix.multiply(PC, inputTranspose));
   }
@@ -177,7 +178,7 @@ public class Data {
    * @param b double[] of data
    * @return the covariance of a and b, cov(a,b)
    */
-  static double covariance(double[] a, double[] b) {
+  double covariance(double[] a, double[] b) {
     if (a.length != b.length) {
       throw new MatrixException("Cannot take covariance of different dimension vectors.");
     }
@@ -212,7 +213,7 @@ public class Data {
       }
     }
 
-    Params.meanValueWriter(mean);
+//    Utils.meanValueWriter(mean, Main.meanValuePath);
     return out;
   }
 
@@ -221,8 +222,8 @@ public class Data {
    *
    * @param entries input array of doubles
    */
-  static double mean(double[] entries) {
-    double out = 0;
+  double mean(double[] entries) {
+    double out = 0.0;
     for (double d : entries) {
       out += d / entries.length;
     }

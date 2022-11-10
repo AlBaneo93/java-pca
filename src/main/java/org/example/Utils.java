@@ -5,13 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Params {
-  public static String pcaDataPath = "./pca_data.ini";
+public class Utils {
 
-  public static String meanFilePath = "./pca_mean.ini";
 
-  public static void pcValueWriter(double[][] pcValues) {
-    try (var fwriter = new BufferedWriter(new FileWriter(pcaDataPath))) {
+  public static void pcValueWriter(double[][] pcValues, String fileName) {
+
+    try (var fwriter = new BufferedWriter(new FileWriter(fileName))) {
       StringBuilder sb = null;
       for (var row : pcValues) {
         sb = new StringBuilder();
@@ -27,16 +26,17 @@ public class Params {
     }
   }
 
-  public static void meanValueWriter(double mean) {
-    try (var fwriter = new BufferedWriter(new FileWriter(meanFilePath))) {
+  public static void meanValueWriter(double mean, String fileName) {
+
+    try (var fwriter = new BufferedWriter(new FileWriter(fileName))) {
       fwriter.write("mean:" + mean);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public static double pcValueLoader(double[][] pcValues) {
-    try (var reader = new BufferedReader(new FileReader(pcaDataPath))) {
+  public double pcValueLoader(String pcaValuePath) {
+    try (var reader = new BufferedReader(new FileReader(pcaValuePath))) {
       return Double.parseDouble(reader.readLine()
                                       .split(":")[1]);
     } catch (IOException e) {
@@ -44,8 +44,8 @@ public class Params {
     }
   }
 
-  public static double[][] meanValueLoader(double mean) {
-    try (var reader = new BufferedReader(new FileReader(meanFilePath))) {
+  public double[][] meanValueLoader(String meanValuePath) {
+    try (var reader = new BufferedReader(new FileReader(meanValuePath))) {
       List<double[]> list = new ArrayList<>();
       while (reader.ready()) {
         list.add(Arrays.stream(reader.readLine()
@@ -63,6 +63,5 @@ public class Params {
       throw new RuntimeException(e);
     }
   }
-
 
 }
