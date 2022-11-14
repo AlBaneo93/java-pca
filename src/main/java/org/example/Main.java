@@ -1,8 +1,6 @@
 package org.example;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,26 +13,35 @@ public class Main {
 
   public static void main(String[] args) throws IOException {
     // 파이썬에서 전처리 후 저장된 경로
-    String beforePcaPath = args[0];
-    int numComponent = Integer.parseInt(args[1]);
-    Main.pcValuePath = args[2];
-    Main.meanValuePath = args[3];
-
+    String beforePcaPath = "/Users/alban/Downloads/pca_test_test.txt";
+    int numComponent = 50;
+    Main.pcValuePath = "/Users/alban/Downloads/pcaValue.txt";
+    Main.meanValuePath = "/Users/alban/Downloads/meanValue.txt";
+    String resultSavePath = "/Users/alban/Downloads/afterPCA.txt";
 
     double[][] data = null;
+    System.out.println("파일 읽기 시작");
+
+    double n = Math.pow(10.0, 7);
+
     List<double[]> tmp = new ArrayList<>();
     try (var bis = new BufferedReader(new FileReader(beforePcaPath))) {
       while (bis.ready()) {
         double[] arr = Arrays.stream(bis.readLine()
                                         .split(","))
-                             .mapToDouble(value -> Double.parseDouble(value.replaceAll(",", "")
-                                                                           .replaceAll(" ", "")))
+                             .mapToDouble(value -> {
+                               double d = Double.parseDouble(value.replaceAll(",", "")
+                                                                  .replaceAll(" ", ""));
+                               return Math.round(d * n) / n;
+                             })
                              .toArray();
         tmp.add(arr);
       }
     } catch (IOException e) {
       return;
     }
+
+    System.out.println("파일 읽기 종료");
 
     data = new double[tmp.size()][0];
     for (int i = 0; i < data.length; i++) {
@@ -44,21 +51,11 @@ public class Main {
       }
     }
     tmp = null;
-
-
+    System.out.println("PCA 시작");
     double[][] afterPca = Data.principalComponentAnalysis(Matrix.transpose(data), numComponent);
+    System.out.println("PCA 종료");
     matrixPrint(Matrix.transpose(afterPca));
-
-  }
-
-  private double[][] transPose(double[][] mat) {
-    double[][] result = new double[mat[0].length][mat.length];
-    for (int i = 0; i < result.length; i++) {
-      for (int j = 0; j < result[i].length; j++) {
-        result[i][j] = mat[j][i];
-      }
-    }
-    return result;
+    savePCAResult(afterPca, resultSavePath);
   }
 
   private static void matrixPrint(double[][] matrix) {
@@ -70,4 +67,23 @@ public class Main {
     }
   }
 
+  private static void savePCAResult(double[][] pcaResult, String savePath) {
+    try (var br = new BufferedWriter(new FileWriter(savePath))) {
+      System.out.println("PCA 결과 저장 시작");
+
+      for (double[] doubles : pcaResult) {
+        StringBuilder sb = new StringBuilder();
+        for (double d : doubles) {
+          sb.append(d)
+            .append(",");
+        }
+        sb.append("\n");
+        br.write(sb.toString());
+      }
+
+      System.out.println("PCA 결과 저장 완료");
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

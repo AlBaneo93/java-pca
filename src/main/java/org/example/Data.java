@@ -2,6 +2,11 @@ package org.example;
 
 import org.example.exception.MatrixException;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Holds the information of a data set. Each row contains a single data point. Primary computations
  * of PCA are performed by the Data object.
@@ -32,18 +37,18 @@ public class Data {
    * @param numComponents desired number of PCs
    * @return the scores of the data array against the PCS
    */
-  public static double[][] PCANIPALS(double[][] input, int numComponents) {
-    Data data = new Data(input);
-    data.center();
-    double[][][] PCA = data.NIPALSAlg(numComponents);
-    double[][] scores = new double[numComponents][input[0].length];
-    for (int point = 0; point < scores[0].length; point++) {
-      for (int comp = 0; comp < PCA.length; comp++) {
-        scores[comp][point] = PCA[comp][0][point];
-      }
-    }
-    return scores;
-  }
+//  public static double[][] PCANIPALS(double[][] input, int numComponents) {
+//    Data data = new Data(input);
+//    data.center();
+//    double[][][] PCA = data.NIPALSAlg(numComponents);
+//    double[][] scores = new double[numComponents][input[0].length];
+//    for (int point = 0; point < scores[0].length; point++) {
+//      for (int comp = 0; comp < PCA.length; comp++) {
+//        scores[comp][point] = PCA[comp][0][point];
+//      }
+//    }
+//    return scores;
+//  }
 
   /**
    * Implementation of the non-linear iterative partial least squares algorithm on the data
@@ -53,39 +58,39 @@ public class Data {
    * @return a double[][][] where the ith double[][] contains ti and pi, the scores
    * and loadings, respectively, of the ith principal component.
    */
-  double[][][] NIPALSAlg(int numComponents) {
-    final double THRESHOLD = 0.00001;
-    double[][][] out = new double[numComponents][][];
-    double[][] E = Matrix.copy(matrix);
-    for (int i = 0; i < out.length; i++) {
-      double eigenOld = 0;
-      double eigenNew = 0;
-      double[] p = new double[matrix[0].length];
-      double[] t = new double[matrix[0].length];
-      double[][] tMatrix = {t};
-      double[][] pMatrix = {p};
-      for (int j = 0; j < t.length; j++) {
-        t[j] = matrix[i][j];
-      }
-      do {
-        eigenOld = eigenNew;
-        double tMult = 1 / Matrix.dot(t, t);
-        tMatrix[0] = t;
-        p = Matrix.scale(Matrix.multiply(Matrix.transpose(E), tMatrix), tMult)[0];
-        p = Matrix.normalize(p);
-        double pMult = 1 / Matrix.dot(p, p);
-        pMatrix[0] = p;
-        t = Matrix.scale(Matrix.multiply(E, pMatrix), pMult)[0];
-        eigenNew = Matrix.dot(t, t);
-      } while (Math.abs(eigenOld - eigenNew) > THRESHOLD);
-      tMatrix[0] = t;
-      pMatrix[0] = p;
-      double[][] PC = {t, p}; //{scores, loadings}
-      E = Matrix.subtract(E, Matrix.multiply(tMatrix, Matrix.transpose(pMatrix)));
-      out[i] = PC;
-    }
-    return out;
-  }
+//  double[][][] NIPALSAlg(int numComponents) {
+//    final double THRESHOLD = 0.00001;
+//    double[][][] out = new double[numComponents][][];
+//    double[][] E = Matrix.copy(matrix);
+//    for (int i = 0; i < out.length; i++) {
+//      double eigenOld = 0;
+//      double eigenNew = 0;
+//      double[] p = new double[matrix[0].length];
+//      double[] t = new double[matrix[0].length];
+//      double[][] tMatrix = {t};
+//      double[][] pMatrix = {p};
+//      for (int j = 0; j < t.length; j++) {
+//        t[j] = matrix[i][j];
+//      }
+//      do {
+//        eigenOld = eigenNew;
+//        double tMult = 1 / Matrix.dot(t, t);
+//        tMatrix[0] = t;
+//        p = Matrix.scale(Matrix.multiply(Matrix.transpose(E), tMatrix), tMult)[0];
+//        p = Matrix.normalize(p);
+//        double pMult = 1 / Matrix.dot(p, p);
+//        pMatrix[0] = p;
+//        t = Matrix.scale(Matrix.multiply(E, pMatrix), pMult)[0];
+//        eigenNew = Matrix.dot(t, t);
+//      } while (Math.abs(eigenOld - eigenNew) > THRESHOLD);
+//      tMatrix[0] = t;
+//      pMatrix[0] = p;
+//      double[][] PC = {t, p}; //{scores, loadings}
+//      E = Matrix.subtract(E, Matrix.multiply(tMatrix, Matrix.transpose(pMatrix)));
+//      out[i] = PC;
+//    }
+//    return out;
+//  }
 
   /**
    * Previous algorithms for performing PCA
@@ -101,11 +106,23 @@ public class Data {
    */
   public static double[][] principalComponentAnalysis(double[][] input, int numComponents) {
     Data data = new Data(input);
+    Instant startCenter = Instant.now();
     data.center();
+    System.out.println("center :: "+ Duration.between(startCenter, Instant.now()).toMillis() + " ms");
+
+    Instant starteigen = Instant.now();
     EigenSet eigen = data.getCovarianceEigenSet();
+    System.out.println("eigen :: " + Duration.between(starteigen, Instant.now()).toMillis() + " ms");
+
+    Instant startfeatureVector = Instant.now();
     double[][] featureVector = data.buildPrincipalComponents(numComponents, eigen);
+    System.out.println("featureVector :: "+ Duration.between(startfeatureVector, Instant.now()).toMillis() + " ms");
+    Instant startPCVector = Instant.now();
     double[][] PC = Matrix.transpose(featureVector);
-//    Utils.pcValueWriter(PC, Main.pcValuePath);
+    System.out.println("PC :: "+Duration.between(startPCVector, Instant.now()).toMillis() + " ms");
+
+    Utils.pcValueWriter(PC, Main.pcValuePath);
+
     double[][] inputTranspose = Matrix.transpose(input);
     return Matrix.transpose(Matrix.multiply(PC, inputTranspose));
   }
@@ -206,14 +223,17 @@ public class Data {
   double[][] normalize(double[][] input) {
     double mean = 0.0;
     double[][] out = new double[input.length][input[0].length];
+
+    List<Double> meanValue = new ArrayList<>();
+
     for (int i = 0; i < input.length; i++) {
       mean = mean(input[i]);
+      meanValue.add(mean);
       for (int j = 0; j < input[i].length; j++) {
         out[i][j] = input[i][j] - mean;
       }
     }
-
-//    Utils.meanValueWriter(mean, Main.meanValuePath);
+    Utils.meanValueWriter(meanValue, Main.meanValuePath);
     return out;
   }
 
