@@ -52,7 +52,8 @@ public class Main {
     }
     tmp = null;
     System.out.println("PCA 시작");
-    double[][] afterPca = Data.principalComponentAnalysis(Matrix.transpose(data), numComponent);
+    Data pcaData = new Data();
+    double[][] afterPca = pcaData.principalComponentAnalysis(Matrix.transpose(data), numComponent);
     System.out.println("PCA 종료");
     matrixPrint(Matrix.transpose(afterPca));
     savePCAResult(afterPca, resultSavePath);

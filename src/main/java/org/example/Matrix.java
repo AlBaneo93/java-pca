@@ -2,6 +2,9 @@ package org.example;
 
 import org.example.exception.MatrixException;
 
+import java.time.Duration;
+import java.time.Instant;
+
 /**
  * Class for performing matrix calculations specific to PCA.
  *
@@ -56,7 +59,11 @@ public class Matrix {
       Q[i][i] = 1; //Q starts as an identity matrix
     }
     boolean done = false;
+    int idx = 0;
     while (!done) {
+      if (idx == 10000) {
+        idx = 0;
+      }
       double[][][] fact = Matrix.QRFactorize(copy);
       double[][] newMat = Matrix.multiply(fact[1], fact[0]); //[A_k+1] := [R_k][Q_k]
       Q = Matrix.multiply(fact[0], Q);
@@ -69,6 +76,7 @@ public class Matrix {
           done = true;
         }
       }
+      idx++;
     }
     EigenSet ret = new EigenSet();
     ret.values = Matrix.extractDiagonalEntries(copy); //Eigenvalues lie on diagonal
@@ -98,11 +106,16 @@ public class Matrix {
    */
   static double[][][] QRFactorize(double[][] input) {
     double[][][] out = new double[2][][];
+    Instant gramSchmidtStart = Instant.now();
     double[][] orthonorm = gramSchmidt(input);
+    System.out.println("gramSchmidt spent time : " + (Duration.between(gramSchmidtStart, Instant.now())
+                                                              .toMillis() * 1000) / 1000 + " ms");
     out[0] = orthonorm; //Q is the matrix of the orthonormal vectors formed by GS on input
     double[][] R = new double[orthonorm.length][orthonorm.length];
     for (int i = 0; i < R.length; i++) {
+      System.out.println("QRFactorize row");
       for (int j = 0; j <= i; j++) {
+        System.out.println("QRFactorize col");
         R[i][j] = dot(input[i], orthonorm[j]);
       }
     }
@@ -119,8 +132,10 @@ public class Matrix {
   static double[][] gramSchmidt(double[][] input) {
     double[][] out = new double[input.length][input[0].length];
     for (int outPos = 0; outPos < out.length; outPos++) {
+//      System.out.println("gramSchmidt row");
       double[] v = input[outPos];
       for (int j = outPos - 1; j >= 0; j--) {
+//        System.out.println("gramSchmidt col");
         double[] sub = proj(v, out[j]);
         v = subtract(v, sub); //Subtract off non-orthogonal components
       }

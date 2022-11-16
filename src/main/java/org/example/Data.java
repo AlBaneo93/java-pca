@@ -15,7 +15,9 @@ import java.util.List;
  * @version 051313
  */
 public class Data {
-  double[][] matrix; //matrix[i] is the ith row; matrix[i][j] is the ith row, jth column
+
+  // 1600 * 2700
+//  double[][] matrix; //matrix[i] is the ith row; matrix[i][j] is the ith row, jth column
 
 
   /**
@@ -23,78 +25,10 @@ public class Data {
    *
    * @param vals data for new Data object; dimensions as columns, data points as rows.
    */
-  Data(double[][] vals) {
-    matrix = Matrix.copy(vals);
-  }
-
-
-  /**
-   * PCA implemented using the NIPALS algorithm. The return value is a double[][], where each
-   * double[] j is an array of the scores of the jth data point corresponding to the desired
-   * number of principal components.
-   *
-   * @param input         input raw data array
-   * @param numComponents desired number of PCs
-   * @return the scores of the data array against the PCS
-   */
-//  public static double[][] PCANIPALS(double[][] input, int numComponents) {
-//    Data data = new Data(input);
-//    data.center();
-//    double[][][] PCA = data.NIPALSAlg(numComponents);
-//    double[][] scores = new double[numComponents][input[0].length];
-//    for (int point = 0; point < scores[0].length; point++) {
-//      for (int comp = 0; comp < PCA.length; comp++) {
-//        scores[comp][point] = PCA[comp][0][point];
-//      }
-//    }
-//    return scores;
+//  Data(double[][] vals) {
+//    matrix = Matrix.copy(vals);
 //  }
 
-  /**
-   * Implementation of the non-linear iterative partial least squares algorithm on the data
-   * matrix for this Data object. The number of PCs returned is specified by the user.
-   *
-   * @param numComponents number of principal components desired
-   * @return a double[][][] where the ith double[][] contains ti and pi, the scores
-   * and loadings, respectively, of the ith principal component.
-   */
-//  double[][][] NIPALSAlg(int numComponents) {
-//    final double THRESHOLD = 0.00001;
-//    double[][][] out = new double[numComponents][][];
-//    double[][] E = Matrix.copy(matrix);
-//    for (int i = 0; i < out.length; i++) {
-//      double eigenOld = 0;
-//      double eigenNew = 0;
-//      double[] p = new double[matrix[0].length];
-//      double[] t = new double[matrix[0].length];
-//      double[][] tMatrix = {t};
-//      double[][] pMatrix = {p};
-//      for (int j = 0; j < t.length; j++) {
-//        t[j] = matrix[i][j];
-//      }
-//      do {
-//        eigenOld = eigenNew;
-//        double tMult = 1 / Matrix.dot(t, t);
-//        tMatrix[0] = t;
-//        p = Matrix.scale(Matrix.multiply(Matrix.transpose(E), tMatrix), tMult)[0];
-//        p = Matrix.normalize(p);
-//        double pMult = 1 / Matrix.dot(p, p);
-//        pMatrix[0] = p;
-//        t = Matrix.scale(Matrix.multiply(E, pMatrix), pMult)[0];
-//        eigenNew = Matrix.dot(t, t);
-//      } while (Math.abs(eigenOld - eigenNew) > THRESHOLD);
-//      tMatrix[0] = t;
-//      pMatrix[0] = p;
-//      double[][] PC = {t, p}; //{scores, loadings}
-//      E = Matrix.subtract(E, Matrix.multiply(tMatrix, Matrix.transpose(pMatrix)));
-//      out[i] = PC;
-//    }
-//    return out;
-//  }
-
-  /**
-   * Previous algorithms for performing PCA
-   */
 
   /**
    * Performs principal component analysis with a specified number of principal components.
@@ -104,22 +38,25 @@ public class Data {
    * @param numComponents number of components desired
    * @return the transformed data set
    */
-  public static double[][] principalComponentAnalysis(double[][] input, int numComponents) {
-    Data data = new Data(input);
+  public double[][] principalComponentAnalysis(double[][] input, int numComponents) {
     Instant startCenter = Instant.now();
-    data.center();
-    System.out.println("center :: "+ Duration.between(startCenter, Instant.now()).toMillis() + " ms");
+    double[][] centeredMatrix = center(input);
+    System.out.println("center :: " + Duration.between(startCenter, Instant.now())
+                                              .toMillis() + " ms");
 
     Instant starteigen = Instant.now();
-    EigenSet eigen = data.getCovarianceEigenSet();
-    System.out.println("eigen :: " + Duration.between(starteigen, Instant.now()).toMillis() + " ms");
+    EigenSet eigen = getCovarianceEigenSet(centeredMatrix);
+    System.out.println("eigen :: " + Duration.between(starteigen, Instant.now())
+                                             .toMillis() + " ms");
 
     Instant startfeatureVector = Instant.now();
-    double[][] featureVector = data.buildPrincipalComponents(numComponents, eigen);
-    System.out.println("featureVector :: "+ Duration.between(startfeatureVector, Instant.now()).toMillis() + " ms");
+    double[][] featureVector = buildPrincipalComponents(numComponents, eigen);
+    System.out.println("featureVector :: " + Duration.between(startfeatureVector, Instant.now())
+                                                     .toMillis() + " ms");
     Instant startPCVector = Instant.now();
     double[][] PC = Matrix.transpose(featureVector);
-    System.out.println("PC :: "+Duration.between(startPCVector, Instant.now()).toMillis() + " ms");
+    System.out.println("PC :: " + Duration.between(startPCVector, Instant.now())
+                                          .toMillis() + " ms");
 
     Utils.pcValueWriter(PC, Main.pcValuePath);
 
@@ -166,9 +103,13 @@ public class Data {
    *
    * @return an EigenSet containing the eigenvalues and eigenvectors of the covariance matrix
    */
-  EigenSet getCovarianceEigenSet() {
-    double[][] data = covarianceMatrix();
-    return Matrix.eigenDecomposition(data);
+  EigenSet getCovarianceEigenSet(double[][] input) {
+    double[][] data = covarianceMatrix(input);
+    Instant start = Instant.now();
+    EigenSet result = Matrix.eigenDecomposition(data);
+    System.out.println("eigenDecomposition spent time :: " + (Duration.between(start, Instant.now())
+                                                                      .toMillis() * 1000) / 1000 + " ms");
+    return result;
   }
 
   /**
@@ -176,12 +117,12 @@ public class Data {
    *
    * @return the covariance matrix of this data set
    */
-  double[][] covarianceMatrix() {
-    double[][] out = new double[matrix.length][matrix.length];
+  double[][] covarianceMatrix(double[][] input) {
+    double[][] out = new double[input.length][input.length];
     for (int i = 0; i < out.length; i++) {
       for (int j = 0; j < out.length; j++) {
-        double[] dataA = matrix[i];
-        double[] dataB = matrix[j];
+        double[] dataA = input[i];
+        double[] dataB = input[j];
         out[i][j] = covariance(dataA, dataB);
       }
     }
@@ -211,9 +152,11 @@ public class Data {
 
   /**
    * Centers each column of the data matrix at its mean.
+   *
+   * @return
    */
-  void center() {
-    matrix = normalize(matrix);
+  double[][] center(double[][] mat) {
+    return normalize(mat);
   }
 
 
